@@ -1,0 +1,23 @@
+{
+  "name": "learn_preview-poxy",
+  "version": "1.0.0",
+  "description": "proxy for the CodeSignal Learn preview window",
+  "main": "proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeSignal/learn_preview-poxy.git"
+  },
+  "author": "Brian Genisio",
+  "license": "SEE LICENCE IN LICENCE",
+  "bugs": {
+    "url": "https://github.com/CodeSignal/learn_preview-poxy/issues"
+  },
+  "homepage": "https://github.com/CodeSignal/learn_preview-poxy#readme",
+  "dependencies": {
+    "http-proxy": "1.18.1",
+    "ws": "8.18.0"
+  }
+}
