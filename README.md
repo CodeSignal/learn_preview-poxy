@@ -2,6 +2,8 @@
 
 A simple proxy server that shows a loading page until the target application is ready.
 
+![Demo of the Preview Proxy](./proxy-example.gif)
+
 ## Features
 
 - Shows a customizable loading page until the target application signals readiness
