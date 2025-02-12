@@ -8,34 +8,56 @@ const WebSocket = require('ws');
 // Parse command line arguments
 function parseArgs() {
   const args = process.argv.slice(2);
-  let serverPort = 3000;
-  let proxyPort = 3001;
-
+  const result = {
+    serverPort: 3000,
+    proxyPort: 3001,
+    defaultIsReady: false,
+    heading: "Loading Application",
+    subheading: "Please wait while we initialize your session...",
+    defaultRedirect: "/",
+  };
+  
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--server-port' && args[i + 1]) {
-      serverPort = parseInt(args[i + 1], 10);
+      result.serverPort = parseInt(args[i + 1], 10);
       i++;
     } else if (args[i] === '--proxy-port' && args[i + 1]) {
-      proxyPort = parseInt(args[i + 1], 10);
+      result.proxyPort = parseInt(args[i + 1], 10);
       i++;
     } else if (args[i] === '--is-ready') {
-      isReady = true;
+      result.isReady = true;
+    } else if (args[i] === "--heading-message") {
+      result.heading = args[i + 1];
+      i++;
+    } else if (args[i] === "--subheading-message") {
+      result.subheading = args[i + 1];
+      i++; 
+    } else if (args[i] === "--redirect-path") {
+      result.defaultRedirect = args[i + 1];
+      i++;
     } else if (args[i] === '--help') {
+      console.log("This proxy will start off in the 'loading' state until it recieves a signal to start proxying");
+      console.log(" - you can activate proxy mode by sending a request to /_ready like this`curl localhost:3000/_ready`");
+      console.log(" - pass ?path=/login to force the page to redirect to a specific path (/login for example)");
+      console.log("");
       console.log("usage: ");
-      console.log("  --server-port 3000   when set, define the port this proxy receives requests from");
-      console.log("  --proxy-port 3001    when set, define the port the target application is listening on.");
-      console.log("  --is-ready           when set, starts the proxy in proxy mode (not loading...)");
+      console.log(" [--server-port 3000]              define the port this proxy receives requests from");
+      console.log(" [--proxy-port 3001]               define the port the target application is listening on.");
+      console.log(" [--heading-message heading]       defines the heading in the loading screen");
+      console.log(" [--subheading-message subheading] defines the heading in the loading screen");
+      console.log(" [--redirect-path /login]          defines the default redirect when the proxy is ready");
+      console.log(" [--is-ready]                      starts the proxy in proxy mode (not loading...)");
       process.exit(0);
     }
   }
 
-  return { serverPort, proxyPort };
+  return result;
 }
 
-let isReady = false;
-const { serverPort, proxyPort } = parseArgs();
-const proxy = httpProxy.createProxyServer({});
+const args = parseArgs();
+let isReady = args.defaultIsReady;
 
+const proxy = httpProxy.createProxyServer({});
 // Handle proxy errors
 proxy.on('error', (err, req, res) => {
   console.error('Proxy error:', err);
@@ -43,7 +65,10 @@ proxy.on('error', (err, req, res) => {
   res.end('Proxy error: The target server may be down or unreachable');
 });
 
-const loadingPage = fs.readFileSync(path.join(__dirname, 'loading.html'), 'utf8');
+const loadingPageTemplate = fs.readFileSync(path.join(__dirname, 'loading.html'), 'utf8');
+const loadingPage = loadingPageTemplate
+  .replace("HEADING_MESSAGE", args.heading)
+  .replace("SUBHEADING_MESSAGE", args.subheading);
 
 // Create HTTP server with error handling
 const server = http.createServer((req, res) => {
@@ -52,7 +77,7 @@ const server = http.createServer((req, res) => {
       isReady = true;
       // Parse the URL to get query parameters
       const parsedUrl = url.parse(req.url, true);
-      const path = parsedUrl.query.path || '/';
+      const path = parsedUrl.query.path || args.defaultRedirect;
       
       // Broadcast to all WebSocket clients that we're ready
       wss.clients.forEach((client) => {
@@ -71,7 +96,7 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    const target = `http://localhost:${proxyPort}`;
+    const target = `http://localhost:${args.proxyPort}`;
     proxy.web(req, res, { target });
   } catch (err) {
     console.error('Server error:', err);
@@ -101,13 +126,13 @@ wss.on('connection', (ws) => {
 });
 
 // Start server
-server.listen(serverPort, (err) => {
+server.listen(args.serverPort, (err) => {
   if (err) {
     console.error('Failed to start server:', err);
     process.exit(1);
   }
-  console.log(`Server running on port ${serverPort}`);
-  console.log(`Will proxy to port ${proxyPort} when ready`);
+  console.log(`Server running on port ${args.serverPort}`);
+  console.log(`Will proxy to port ${args.proxyPort} when ready`);
 });
 
 // Handle uncaught exceptions and unhandled rejections

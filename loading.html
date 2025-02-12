@@ -52,11 +52,11 @@
     }
   </style>
   <script>
-    // provide a mechanism to change the URL in the Learn Preview URL frame:
+    // provide a mechanism to change the URL:
     const sendMessage = (payload) => {
       window.parent.postMessage({ source: 'codesignal-preview-communication', payload }, '*');
     };
-
+    
     // Connect to WebSocket server
     const ws = new WebSocket('ws://' + window.location.host + '/_ws');
     
@@ -65,11 +65,11 @@
         const data = JSON.parse(event.data);
         if (data.type === 'ready') {
           // Reload to the specified path or current path if none provided
-          sendMessage({
+          sendMessage({ 
             kind: 'location-change',
             url: `${window.location.origin}${data.path}`,
           });
-
+          
           window.location.href = data.path;
         }
       } catch (err) {
@@ -88,8 +88,8 @@
 <body>
   <div class="container">
     <div class="spinner"></div>
-    <h1>Loading Application</h1>
-    <p>Please wait while we initialize your session...</p>
+    <h1>HEADING_MESSAGE</h1>
+    <p>SUBHEADING_MESSAGE</p>
   </div>
 </body>
 </html>
