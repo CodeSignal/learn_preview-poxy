@@ -52,6 +52,11 @@
     }
   </style>
   <script>
+    // provide a mechanism to change the URL in the Learn Preview URL frame:
+    const sendMessage = (payload) => {
+      window.parent.postMessage({ source: 'codesignal-preview-communication', payload }, '*');
+    };
+
     // Connect to WebSocket server
     const ws = new WebSocket('ws://' + window.location.host + '/_ws');
     
@@ -60,6 +65,11 @@
         const data = JSON.parse(event.data);
         if (data.type === 'ready') {
           // Reload to the specified path or current path if none provided
+          sendMessage({
+            kind: 'location-change',
+            url: `${window.location.origin}${data.path}`,
+          });
+
           window.location.href = data.path;
         }
       } catch (err) {
